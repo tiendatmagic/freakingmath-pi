@@ -33,41 +33,43 @@ const bestScoreDisplay = document.getElementById('best-score-display');
 async function init() {
     if (bestScoreDisplay) bestScoreDisplay.textContent = highScore;
     
-    // Thêm một dòng text debug ở cuối body (chỉ để kiểm tra, sau này sẽ xóa)
     const debugInfo = document.createElement('div');
-    debugInfo.style.cssText = 'position:fixed;bottom:5px;left:0;width:100%;font-size:10px;color:#94a3b8;text-align:center;z-index:9999;pointer-events:none;';
+    debugInfo.style.cssText = 'position:fixed;bottom:5px;left:0;width:100%;font-size:10px;color:#94a3b8;text-align:center;z-index:9999;pointer-events:none;background:rgba(0,0,0,0.5);';
     debugInfo.id = 'debug-ua';
-    debugInfo.textContent = 'UA: ' + navigator.userAgent.substring(0, 50) + '...';
     document.body.appendChild(debugInfo);
 
-    // Đợi SDK
     setTimeout(async () => {
         const ua = navigator.userAgent.toLowerCase();
         const hasPiObject = typeof Pi !== 'undefined';
-        const isPiUA = ua.includes('pibrowser') || ua.includes('pi-browser') || ua.includes('pi search');
-        const isPiBrowser = hasPiObject && (isPiUA || window.PiProxy);
         
-        document.getElementById('debug-ua').textContent = `Object: ${hasPiObject} | UA: ${isPiUA} | Final: ${isPiBrowser}`;
+        // Kiểm tra UA mở rộng hơn
+        const isPiUA = ua.includes('pibrowser') || ua.includes('pi-browser') || ua.includes('pi search') || ua.includes('pi/');
+        
+        // Nếu là thiết bị di động và có Object Pi, khả năng cao là Pi Browser
+        const isMobile = /iphone|ipad|ipod|android/i.test(ua);
+        const isPiBrowser = hasPiObject && (isPiUA || window.PiProxy || (isMobile && !ua.includes('chrome') && !ua.includes('safari')));
+        
+        document.getElementById('debug-ua').textContent = `Obj: ${hasPiObject} | UA: ${isPiUA} | Mob: ${isMobile} | Res: ${isPiBrowser}`;
 
         if (!isPiBrowser) {
-            console.log("Guest Mode active");
             if (btnLogin) {
                 btnLogin.textContent = "CHƠI NGAY (GUEST MODE)";
                 btnLogin.style.backgroundColor = '#10b981';
             }
         } else {
             try {
-                // Thử init với sandbox: true trước vì bạn chưa đăng ký app chính thức
+                // Thử init với sandbox: true trước
                 Pi.init({ version: "2.0", sandbox: true });
                 if (btnLogin) {
                     btnLogin.textContent = "ĐĂNG NHẬP VỚI PI";
                     btnLogin.style.backgroundColor = ''; 
                 }
+                console.log("Pi SDK Initialized successfully");
             } catch (err) {
-                console.warn("Init failed:", err);
+                console.error("SDK Init Error:", err);
             }
         }
-    }, 500); // Tăng delay lên 500ms cho chắc chắn
+    }, 800); // Tăng lên 800ms để đảm bảo môi trường đã sẵn sàng
 }
 
 // Xử lý đăng nhập
