@@ -33,35 +33,41 @@ const bestScoreDisplay = document.getElementById('best-score-display');
 async function init() {
     if (bestScoreDisplay) bestScoreDisplay.textContent = highScore;
     
-    // Đợi một chút để Pi SDK kịp khởi tạo (tránh race condition)
+    // Thêm một dòng text debug ở cuối body (chỉ để kiểm tra, sau này sẽ xóa)
+    const debugInfo = document.createElement('div');
+    debugInfo.style.cssText = 'position:fixed;bottom:5px;left:0;width:100%;font-size:10px;color:#94a3b8;text-align:center;z-index:9999;pointer-events:none;';
+    debugInfo.id = 'debug-ua';
+    debugInfo.textContent = 'UA: ' + navigator.userAgent.substring(0, 50) + '...';
+    document.body.appendChild(debugInfo);
+
+    // Đợi SDK
     setTimeout(async () => {
-        // Kiểm tra User Agent kỹ hơn (bao gồm cả các biến thể)
         const ua = navigator.userAgent.toLowerCase();
-        const isPiBrowser = typeof Pi !== 'undefined' && (ua.includes('pibrowser') || ua.includes('pi-browser') || window.PiProxy);
+        const hasPiObject = typeof Pi !== 'undefined';
+        const isPiUA = ua.includes('pibrowser') || ua.includes('pi-browser') || ua.includes('pi search');
+        const isPiBrowser = hasPiObject && (isPiUA || window.PiProxy);
         
+        document.getElementById('debug-ua').textContent = `Object: ${hasPiObject} | UA: ${isPiUA} | Final: ${isPiBrowser}`;
+
         if (!isPiBrowser) {
-            console.log("Running in standard browser (Guest Mode)");
+            console.log("Guest Mode active");
             if (btnLogin) {
                 btnLogin.textContent = "CHƠI NGAY (GUEST MODE)";
                 btnLogin.style.backgroundColor = '#10b981';
             }
         } else {
-            console.log("Pi Browser detected!");
             try {
-                // Khởi tạo SDK với sandbox tùy thuộc vào việc bạn đang test hay build thật
-                // Khi chạy trên Vercel và mở bằng Pi Browser, sandbox: false thường sẽ tốt hơn
-                Pi.init({ version: "2.0", sandbox: false });
-                
-                // Cập nhật lại giao diện nút bấm về mặc định của Pi
+                // Thử init với sandbox: true trước vì bạn chưa đăng ký app chính thức
+                Pi.init({ version: "2.0", sandbox: true });
                 if (btnLogin) {
                     btnLogin.textContent = "ĐĂNG NHẬP VỚI PI";
-                    btnLogin.style.backgroundColor = ''; // Reset về CSS gốc
+                    btnLogin.style.backgroundColor = ''; 
                 }
             } catch (err) {
-                console.warn("Pi SDK Init Error:", err);
+                console.warn("Init failed:", err);
             }
         }
-    }, 100); // Delay 100ms
+    }, 500); // Tăng delay lên 500ms cho chắc chắn
 }
 
 // Xử lý đăng nhập
