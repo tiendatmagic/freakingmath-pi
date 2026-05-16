@@ -41,15 +41,14 @@ async function init() {
     setTimeout(async () => {
         const ua = navigator.userAgent.toLowerCase();
         const hasPiObject = typeof Pi !== 'undefined';
-        
-        // Kiểm tra UA mở rộng hơn
-        const isPiUA = ua.includes('pibrowser') || ua.includes('pi-browser') || ua.includes('pi search') || ua.includes('pi/');
-        
-        // Nếu là thiết bị di động và có Object Pi, khả năng cao là Pi Browser
         const isMobile = /iphone|ipad|ipod|android/i.test(ua);
-        const isPiBrowser = hasPiObject && (isPiUA || window.PiProxy || (isMobile && !ua.includes('chrome') && !ua.includes('safari')));
         
-        document.getElementById('debug-ua').textContent = `Obj: ${hasPiObject} | UA: ${isPiUA} | Mob: ${isMobile} | Res: ${isPiBrowser}`;
+        // LOGIC MỚI: Chỉ cần có Object Pi và là di động thì coi như là Pi Browser
+        // (Hoặc có chuỗi nhận diện đặc biệt)
+        const isPiUA = ua.includes('pibrowser') || ua.includes('pi-browser') || ua.includes('pi/') || ua.includes('pi search');
+        const isPiBrowser = hasPiObject && (isPiUA || isMobile || window.PiProxy);
+        
+        document.getElementById('debug-ua').textContent = `Obj: ${hasPiObject} | UA: ${isPiUA} | Mob: ${isMobile} | Final: ${isPiBrowser}`;
 
         if (!isPiBrowser) {
             if (btnLogin) {
@@ -58,18 +57,17 @@ async function init() {
             }
         } else {
             try {
-                // Thử init với sandbox: true trước
+                // Khởi tạo SDK
                 Pi.init({ version: "2.0", sandbox: true });
                 if (btnLogin) {
                     btnLogin.textContent = "ĐĂNG NHẬP VỚI PI";
                     btnLogin.style.backgroundColor = ''; 
                 }
-                console.log("Pi SDK Initialized successfully");
             } catch (err) {
                 console.error("SDK Init Error:", err);
             }
         }
-    }, 800); // Tăng lên 800ms để đảm bảo môi trường đã sẵn sàng
+    }, 500);
 }
 
 // Xử lý đăng nhập
