@@ -33,26 +33,35 @@ const bestScoreDisplay = document.getElementById('best-score-display');
 async function init() {
     if (bestScoreDisplay) bestScoreDisplay.textContent = highScore;
     
-    // Kiểm tra xem có thực sự đang ở trong Pi Browser không
-    const isPiBrowser = typeof Pi !== 'undefined' && navigator.userAgent.toLowerCase().includes('pibrowser');
-    
-    if (!isPiBrowser) {
-        console.log("Running in standard browser (Guest Mode)");
-        // Cập nhật text cho nút Material trên Chrome
-        if (btnLogin) {
-            btnLogin.textContent = "CHƠI NGAY (GUEST MODE)";
-            btnLogin.style.backgroundColor = '#10b981'; // Màu xanh Material Emerald
+    // Đợi một chút để Pi SDK kịp khởi tạo (tránh race condition)
+    setTimeout(async () => {
+        // Kiểm tra User Agent kỹ hơn (bao gồm cả các biến thể)
+        const ua = navigator.userAgent.toLowerCase();
+        const isPiBrowser = typeof Pi !== 'undefined' && (ua.includes('pibrowser') || ua.includes('pi-browser') || window.PiProxy);
+        
+        if (!isPiBrowser) {
+            console.log("Running in standard browser (Guest Mode)");
+            if (btnLogin) {
+                btnLogin.textContent = "CHƠI NGAY (GUEST MODE)";
+                btnLogin.style.backgroundColor = '#10b981';
+            }
+        } else {
+            console.log("Pi Browser detected!");
+            try {
+                // Khởi tạo SDK với sandbox tùy thuộc vào việc bạn đang test hay build thật
+                // Khi chạy trên Vercel và mở bằng Pi Browser, sandbox: false thường sẽ tốt hơn
+                Pi.init({ version: "2.0", sandbox: false });
+                
+                // Cập nhật lại giao diện nút bấm về mặc định của Pi
+                if (btnLogin) {
+                    btnLogin.textContent = "ĐĂNG NHẬP VỚI PI";
+                    btnLogin.style.backgroundColor = ''; // Reset về CSS gốc
+                }
+            } catch (err) {
+                console.warn("Pi SDK Init Error:", err);
+            }
         }
-    }
-
-    try {
-        if (isPiBrowser) {
-            Pi.init({ version: "2.0", sandbox: true });
-            console.log("Pi SDK Initialized");
-        }
-    } catch (err) {
-        console.warn("Pi SDK Init skipped:", err);
-    }
+    }, 100); // Delay 100ms
 }
 
 // Xử lý đăng nhập
