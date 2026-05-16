@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Pi Wallet Info</title>
+  </head>
+  <body>
+    <h2>Pi User Info</h2>
+
+    <button onclick="login()">Login with Pi</button>
+
+    <div id="result"></div>
+
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+
+    <script>
+      Pi.init({
+        version: "2.0",
+        sandbox: true,
+      });
+
+      async function login() {
+        try {
+          const scopes = ["username"];
+
+          const auth = await Pi.authenticate(
+            scopes,
+            function (incompletePayment) {},
+          );
+
+          console.log(auth);
+
+          const user = auth.user;
+
+          document.getElementById("result").innerHTML = `
+      <p><b>Username:</b> ${user.username}</p>
+      <p><b>UID:</b> ${user.uid}</p>
+      <p><b>Access Token:</b> ${auth.accessToken}</p>
+    `;
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    </script>
+  </body>
+</html>
